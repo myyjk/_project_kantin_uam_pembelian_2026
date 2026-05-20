@@ -302,7 +302,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <label class="form-label small fw-bold">Nama User / Email</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-user"></i></span>
-                            <input type="text" name="username" class="form-control" placeholder="Masukkan nama user atau email" required value="sastra">
+                            <input type="text" name="username" class="form-control" placeholder="Masukkan nama user atau email" required >
                         </div>
                     </div>
 
@@ -310,7 +310,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <label class="form-label small fw-bold">Password</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                            <input type="password" name="password" class="form-control" placeholder="••••••••" required value="sastra123">
+                            <input type="password" name="password" class="form-control" placeholder="••••••••" >
                         </div>
                     </div>
 

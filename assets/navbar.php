@@ -1,14 +1,14 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
-$nama_petugas   = $_SESSION['currentUser']['nama'] ?? $_SESSION['currentUser']['username'] ?? 'Sastra';
+$nama_petugas   = $_SESSION['currentUser']['username'] ?? $_SESSION['currentUser']['namalengkap'] ?? 'Sastra';
 $inisial_navbar = strtoupper(substr($nama_petugas, 0, 1));
 $foto_path_navbar = '';
 
 // Ambil foto langsung dari DB agar selalu up-to-date
-if (!empty($_SESSION['currentUser']['id_user']) && isset($conn)) {
-    $uid  = $_SESSION['currentUser']['id_user'];
-    $qf   = mysqli_query($conn, "SELECT foto FROM users WHERE id_user='$uid' LIMIT 1");
+if (!empty($_SESSION['currentUser']['id']) && isset($conn)) {
+    $uid  = $_SESSION['currentUser']['id'];
+    $qf   = mysqli_query($conn, "SELECT foto FROM users WHERE id='$uid' LIMIT 1");
     $rowf = mysqli_fetch_assoc($qf);
     $foto_file = $rowf['foto'] ?? '';
     if ($foto_file && file_exists(__DIR__ . '/../account/uploads/' . $foto_file)) {
@@ -193,10 +193,11 @@ if (!empty($_SESSION['currentUser']['id_user']) && isset($conn)) {
             <i class="far fa-calendar-alt"></i>
             Hari ini: <strong><?= date('d F Y'); ?></strong>
         </div>
-        <div class="nav-info-pill">
-            <i class="far fa-clock"></i>
-            Zona Waktu: <strong>WIB</strong>
-        </div>
+  <div class="nav-info-pill">
+    <i class="far fa-clock-alt"></i>
+    Zona Waktu: 
+    | <span id="jam-wib" style="font-weight: bold;">00:00:00</span>
+</div>
     </div>
 
     <div class="nav-right">
@@ -216,7 +217,7 @@ if (!empty($_SESSION['currentUser']['id_user']) && isset($conn)) {
                 <span><?= htmlspecialchars($nama_petugas); ?></span>
             </div>
         </div>
-        <a href="logout.php" class="btn-logout"
+        <a href="../login/logout.php" class="btn-logout"
            onclick="return confirm('Apakah Anda yakin ingin keluar dari sistem Kantin UAM?')">
             <i class="fas fa-sign-out-alt"></i>
             <span class="d-none d-sm-inline">Keluar</span>
@@ -224,3 +225,13 @@ if (!empty($_SESSION['currentUser']['id_user']) && isset($conn)) {
     </div>
 
 </div>
+
+<script>
+    function jalankanJam() {
+        const opsi = { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }; 
+        const formatJam = new Intl.DateTimeFormat('id-ID', opsi);
+        document.getElementById('jam-wib').textContent = formatJam.format(new Date());
+    }
+    jalankanJam(); // Jalankan langsung saat web dibuka
+    setInterval(jalankanJam, 1000); // Update setiap 1 detik
+</script>

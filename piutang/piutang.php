@@ -11,6 +11,7 @@ $admin_nama    = $_SESSION['currentUser']['username'] ?? 'Admin';
 $id_user_login = $_SESSION['currentUser']['id'] ?? 0;
 
 // QUERY UTAMA: Menampilkan data pembelian/hutang
+// QUERY UTAMA: Menampilkan data pembelian/hutang
 $query = "SELECT 
             p.id_beli,
             p.no_faktur,
@@ -22,7 +23,7 @@ $query = "SELECT
           FROM pembelian p
           LEFT JOIN vendor v ON p.id_vendor = v.id_vendor
           LEFT JOIN detail_beli db ON p.id_beli = db.id_beli
-          LEFT JOIN barang pr ON db.id = pr.id
+          LEFT JOIN barang pr ON db.id_produk = pr.id -- <-- PERBAIKAN DI SINI
           GROUP BY p.id_beli
           ORDER BY p.tanggal_beli DESC";
 

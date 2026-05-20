@@ -48,7 +48,7 @@ $total_mencicil   = floatval($data_pembayaran['total_mencicil'] ?? 0);
 $query_detail = mysqli_query($conn, "
     SELECT db.*, b.nama AS nama_produk 
     FROM detail_beli db
-    JOIN barang b ON db.id = b.id
+    JOIN barang b ON db.id_produk = b.id
     WHERE db.id_beli = '$id_beli'
 ");
 
@@ -132,7 +132,7 @@ if (!$query_detail) {
             </div>
         </div>
 
-        <h6 class="fw-bold text-dark mb-3"> Daftar Barang Yang Dibeli :</h6>
+        <h6 class="fw-bold text-dark mb-3">🛒 Daftar Barang Yang Dibeli :</h6>
 
         <div class="table-responsive">
             <table class="table table-sm table-borderless align-middle" style="font-size: 0.9rem;">

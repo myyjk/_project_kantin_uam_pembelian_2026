@@ -8,13 +8,21 @@ if (!isset($_SESSION['isLoggedIn'])) {
     exit();
 }
 
-$admin_id = $_SESSION['currentUser']['id_user'] ?? $_SESSION['currentUser']['id_admin'] ?? null;
+$admin_id = $_SESSION['currentUser']['id'] ?? $_SESSION['currentUser']['id_admin'] ?? null;
 $admin_nama = $_SESSION['currentUser']['nama'] ?? 'Petugas';
 
 // ==========================================
 // LOGIKA MENYIMPAN TRANSAKSI (PROSES POST AJAX)
 // ==========================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'checkout') {
+    
+    // --- AUTO FIX DATABASE RELATION (FOREIGN KEY) ---
+    // Menghapus foreign key lama yang salah arah ke tabel 'produk'
+    mysqli_query($conn, "ALTER TABLE detail_beli DROP FOREIGN KEY fk_detail_produk");
+    // Membuat foreign key baru yang benar mengarah ke tabel 'barang' kolom 'id'
+    mysqli_query($conn, "ALTER TABLE detail_beli ADD CONSTRAINT fk_detail_barang_baru FOREIGN KEY (id_produk) REFERENCES barang(id) ON UPDATE CASCADE ON DELETE RESTRICT");
+    // ------------------------------------------------
+    
     $id_vendor = mysqli_real_escape_string($conn, $_POST['id_vendor']);
     $metode_pilih = mysqli_real_escape_string($conn, $_POST['metode_pilih'] ?? 'Tunai');
     
@@ -33,9 +41,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $total_bayar = floatval($_POST['total'] ?? 0);
     $jumlah_dibayar = floatval($_POST['dibayar'] ?? 0);
 
-    // SQL diubah agar aman dari error 'Unknown column foto_nota'
+    // Memasukkan data transaksi ke tabel pembelian
     $query_save = "INSERT INTO pembelian (no_faktur, tanggal_beli, id_admin, id_vendor, metode) 
-                   VALUES ('$no_faktur', '$tanggal_beli', '$admin_id', '$id_vendor', '$jumlah_dibayar')";
+                   VALUES ('$no_faktur', '$tanggal_beli', '$admin_id', '$id_vendor', '$metode_pilih')";
     
     if (mysqli_query($conn, $query_save)) {
         $id_beli_terbaru = mysqli_insert_id($conn);
@@ -47,9 +55,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 $qty = intval($item['qty']);
                 $harga = floatval($item['price']);
 
-                // Input ke tabel detail_beli sesuai struktur database Anda
-                mysqli_query($conn, "INSERT INTO detail_beli (id_beli, id, jumlah, harga) 
-                                     VALUES ('$id_beli_terbaru', '$id_produk', '$qty', '$harga')");
+                // Input ke tabel detail_beli
+                $query_detail = "INSERT INTO detail_beli (id_beli, id_produk, jumlah, harga) 
+                                 VALUES ('$id_beli_terbaru', '$id_produk', '$qty', '$harga')";
+                
+                if (!mysqli_query($conn, $query_detail)) {
+                    echo json_encode(['status' => 'gagal', 'pesan' => 'Gagal simpan detail: ' . mysqli_error($conn)]);
+                    exit();
+                }
 
                 // Update pengurangan/penyesuaian stok barang di database
                 mysqli_query($conn, "UPDATE barang SET stok = stok - $qty WHERE id = '$id_produk'");
@@ -67,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     } else {
         echo json_encode([
             'status' => 'gagal',
-            'pesan' => mysqli_error($conn)
+            'pesan' => 'Gagal simpan pembelian: ' . mysqli_error($conn)
         ]);
     }
     exit();
@@ -196,7 +209,7 @@ $vendor_db = ($query_vendor) ? mysqli_fetch_all($query_vendor, MYSQLI_ASSOC) : [
         filtered.forEach(p => {
             const hargaJual = parseInt(p.harga_jual) || 0; 
             const coreStok = p.stok !== null ? parseInt(p.stok) : 0; 
-            const displayStok = coreStok < 0 ? 0 : coreStok; // Tampilan layar tetap 0 walau stok database kosong/minus
+            const displayStok = coreStok < 0 ? 0 : coreStok;
 
             let gambarHTML = (p.foto && p.foto.trim() !== "") ? `<img src="uploads/${p.foto}">` : `<i class="fas fa-hamburger fa-2x text-secondary opacity-20"></i>`;
 
@@ -295,7 +308,6 @@ $vendor_db = ($query_vendor) ? mysqli_fetch_all($query_vendor, MYSQLI_ASSOC) : [
         renderCart();
     }
 
-    // Mengatur kemunculan input No Faktur & Nominal DP secara kondisional
     function toggleHutang() {
         const method = document.getElementById('methodSelect').value;
         const fields = document.getElementById('hutangFields');
@@ -311,7 +323,6 @@ $vendor_db = ($query_vendor) ? mysqli_fetch_all($query_vendor, MYSQLI_ASSOC) : [
         }
     }
 
-    // PROSES UTAMA AJAX CLEAN REFRESH (TANPA RELOAD WEBSITE)
     function checkout() {
         const metode = document.getElementById('methodSelect').value;
         const noFaktur = document.getElementById('no_faktur').value.trim();
@@ -347,13 +358,11 @@ $vendor_db = ($query_vendor) ? mysqli_fetch_all($query_vendor, MYSQLI_ASSOC) : [
             if(res.status === 'sukses') {
                 alert("✅ Transaksi Berhasil Disimpan!");
                 
-                // Singkronisasi data stok lokal dengan database terbaru kiriman AJAX
                 res.stok_baru.forEach(dbItem => {
                     let lokalItem = productsData.find(p => p.id == dbItem.id);
                     if (lokalItem) lokalItem.stok = dbItem.stok;
                 });
 
-                // Bersihkan Keranjang belanja secara instant tanpa reload web
                 cart = [];
                 document.getElementById('id_vendor').value = "0";
                 document.getElementById('methodSelect').value = "Tunai";

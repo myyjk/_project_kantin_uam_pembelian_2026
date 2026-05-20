@@ -26,8 +26,8 @@ $batas_hari = ($role_id == 1) ? 30 : 7;
 $bisa_edit  = true;
 $sisa_hari  = 0;
 
-if ($user['last_update_profile']) {
-    $diff = (strtotime(date('Y-m-d H:i:s')) - strtotime($user['last_update_profile'])) / 86400;
+if ($user['updated_at']) {
+    $diff = (strtotime(date('Y-m-d H:i:s')) - strtotime($user['updated_at'])) / 86400;
     if ($diff < $batas_hari) {
         $bisa_edit = false;
         $sisa_hari = ceil($batas_hari - $diff);
@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $bisa_edit) {
             $pass_sql = $pass !== '' ? ", password='$pass'" : "";
             
             // PERBAIKAN: Update diarahkan ke kolom 'namalengkap'
-            $sql = "UPDATE users SET namalengkap='$nama', email='$email', foto='$foto' $pass_sql, last_update_profile='$now' WHERE id='$user_id'";
+            $sql = "UPDATE users SET namalengkap='$nama', email='$email', foto='$foto' $pass_sql, updated_at='$now' WHERE id='$user_id'";
             
             if (mysqli_query($conn, $sql)) {
                 $_SESSION['currentUser']['nama'] = $nama;

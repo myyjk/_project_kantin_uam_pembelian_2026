@@ -1,14 +1,14 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
-$nama_petugas    = $_SESSION['currentUser']['nama'] ?? $_SESSION['currentUser']['username'] ?? 'Sastra';
+$nama_petugas    = $_SESSION['currentUser']['username'] ?? $_SESSION['currentUser']['username'] ?? 'Sastra';
 $inisial_sidebar = strtoupper(substr($nama_petugas, 0, 1));
 $foto_path_sidebar = '';
 
 // Ambil foto langsung dari DB agar selalu up-to-date
-if (!empty($_SESSION['currentUser']['id_user']) && isset($conn)) {
-    $uid  = $_SESSION['currentUser']['id_user'];
-    $qf   = mysqli_query($conn, "SELECT foto FROM users WHERE id_user='$uid' LIMIT 1");
+if (!empty($_SESSION['currentUser']['id']) && isset($conn)) {
+    $uid  = $_SESSION['currentUser']['id'];
+    $qf   = mysqli_query($conn, "SELECT foto FROM users WHERE id='$uid' LIMIT 1");
     $rowf = mysqli_fetch_assoc($qf);
     $foto_file = $rowf['foto'] ?? '';
     if ($foto_file && file_exists(__DIR__ . '/../account/uploads/' . $foto_file)) {
@@ -282,7 +282,7 @@ if (!empty($_SESSION['currentUser']['id_user']) && isset($conn)) {
         </a>
         <a href="../piutang/piutang.php" class="menu-link">
             <div class="menu-icon"><i class="fas fa-file-invoice-dollar"></i></div>
-            Detail Piutang
+            Hutang & Pembayaran
         </a>
 
     </div>
@@ -300,7 +300,8 @@ if (!empty($_SESSION['currentUser']['id_user']) && isset($conn)) {
                 <?php endif; ?>
             </div>
             <div class="user-info">
-                <small>Petugas</small>
+                
+                <small><?= $_SESSION['currentUser']['namarole'] ?? 'Role Tidak Diketahui' ?> Aktif</small>
                 <span><?= htmlspecialchars($nama_petugas); ?></span>
             </div>
         </div>
@@ -310,7 +311,7 @@ if (!empty($_SESSION['currentUser']['id_user']) && isset($conn)) {
             Profile Saya
         </a>
 
-        <a href="logout.php" class="logout-link"
+        <a href="../login/logout.php" class="logout-link"
            onclick="return confirm('Yakin ingin keluar?')">
             <i class="fas fa-right-from-bracket"></i>
             Logout dari Sistem
