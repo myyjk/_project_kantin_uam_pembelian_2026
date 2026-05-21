@@ -1,8 +1,8 @@
 <?php
 // config.php
-$host = "192.168.101.124";
-$user = "abc";
-$pass = "abc";
+$host = "localhost"; // Biasanya localhost, tapi bisa berbeda jika hosting
+$user = "root"; // Biasanya root, tapi bisa berbeda jika hosting
+$pass = "";
 $db   = "db_kantin"; // Pastikan nama database ini sudah kamu buat di phpMyAdmin
 
 $conn = mysqli_connect($host, $user, $pass, $db);

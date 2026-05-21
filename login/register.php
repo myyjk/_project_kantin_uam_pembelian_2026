@@ -4,16 +4,26 @@ require '../config/config.php';
 
 // Cek apakah ada kiriman data pendaftaran (setelah OTP sukses di frontend)
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ajax_register'])) {
-    $nama = mysqli_real_escape_string($conn, $_POST['nama']);
+    $namalengkap = mysqli_real_escape_string($conn, $_POST['namalengkap']);
+    $username = mysqli_real_escape_string($conn, $_POST['username']);
     $email = mysqli_real_escape_string($conn, $_POST['email']);
-    $password = $_POST['password']; // Di database kita simpan string biasa sesuai permintaan sebelumnya
+    $password = $_POST['password']; // Disimpan string biasa sesuai request sebelumnya
 
-    // Cek apakah email sudah terdaftar
-    $cek = mysqli_query($conn, "SELECT email FROM users WHERE email = '$email'");
-    if (mysqli_num_rows($cek) > 0) {
+    // Cek apakah email sudah terdaftar di db baru
+    $cek_email = mysqli_query($conn, "SELECT email FROM users WHERE email = '$email'");
+    // Cek juga apakah username sudah dipakai orang lain
+    $cek_user = mysqli_query($conn, "SELECT username FROM users WHERE username = '$username'");
+
+    if (mysqli_num_rows($cek_email) > 0) {
         echo "email_ada";
+    } elseif (mysqli_num_rows($cek_user) > 0) {
+        echo "username_ada";
     } else {
-        $query = "INSERT INTO users (nama, email, password, role) VALUES ('$nama', '$email', '$password', 'User')";
+        // SESUAI STRUKTUR DATABASE BARU (Foto 2):
+        // Kolom: id_role (2 = User), username, namalengkap, email, password
+        $query = "INSERT INTO users (id_role, username, namalengkap, email, password) 
+                  VALUES (2, '$username', '$namalengkap', '$email', '$password')";
+        
         if (mysqli_query($conn, $query)) {
             echo "sukses";
         } else {
@@ -52,11 +62,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ajax_register'])) {
         .form-control:focus{ border-color:#fd7e14; box-shadow:0 0 0 0.25rem rgba(253,126,20,0.1); background:#fff; }
         #otp-box{ display:none; }
         
-        /* --- KANAN: VIDEO AREA PREMIUM (SAMAKAN DENGAN LOGIN) --- */
+        /* --- KANAN: VIDEO AREA PREMIUM --- */
         .video-side{ position:relative; width:100%; height:100vh; overflow:hidden; }
         .video-bg{ width:100%; height:100%; object-fit:cover; }
         
-        /* Overlay Vinyet Sinematik */
         .overlay{ 
             position:absolute; 
             top:0; 
@@ -66,7 +75,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ajax_register'])) {
             background: radial-gradient(circle at center, rgba(25, 135, 84, 0.1) 0%, rgba(0, 0, 0, 0.7) 100%); 
         }
         
-        /* 1. KIRI ATAS: Identitas Kampus + Ucapan Waktu Dinamis */
         .brand-top-left {
             position: absolute;
             top: 40px;
@@ -103,7 +111,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ajax_register'])) {
             margin-bottom: 0;
         }
 
-        /* 2. KANAN ATAS: Live Digital Clock Widget */
         .clock-widget {
             position: absolute;
             top: 40px;
@@ -132,7 +139,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ajax_register'])) {
             letter-spacing: 1px;
         }
 
-        /* 3. KANAN BAWAH: Dock Menu Sosmed Kapsul */
         .social-dock-bottom {
             position: absolute;
             bottom: 50px;
@@ -183,7 +189,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ajax_register'])) {
         .social-btn.btn-yt:hover { background: #ff0000; border-color: #ff0000; }
         .social-btn.btn-tt:hover { background: #000000; border-color: #fff; }
 
-        /* 4. PALING BAWAH: Running Text Info Marquee */
         .info-marquee {
             position: absolute;
             bottom: 0;
@@ -198,7 +203,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ajax_register'])) {
             border-top: 1px solid rgba(255,255,255,0.1);
         }
 
-        /* KEYFRAMES ANIMASI */
         @keyframes fadeInDown {
             from { opacity: 0; transform: translateY(-20px); }
             to { opacity: 1; transform: translateY(0); }
@@ -231,7 +235,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ajax_register'])) {
                     <form onsubmit="handleSendOTP(event)" class="text-start">
                         <div class="mb-3">
                             <label class="form-label small fw-bold">Nama Lengkap</label>
-                            <input type="text" id="regUser" class="form-control" placeholder="Nama lengkap" required>
+                            <input type="text" id="regFullName" class="form-control" placeholder="Nama lengkap sesuai identitas" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Username</label>
+                            <input type="text" id="regUser" class="form-control" placeholder="username_kamu" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-bold">Email</label>
@@ -317,17 +325,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ajax_register'])) {
 function updateClockAndWelcome() {
     const now = new Date();
     
-    // Format Jam Digital
     let hours = String(now.getHours()).padStart(2, '0');
     let minutes = String(now.getMinutes()).padStart(2, '0');
     let seconds = String(now.getSeconds()).padStart(2, '0');
     document.getElementById('live-time').textContent = `${hours}:${minutes}:${seconds}`;
     
-    // Format Tanggal Indonesia
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     document.getElementById('live-date').textContent = now.toLocaleDateString('id-ID', options);
     
-    // Logika Ganti Ucapan Otomatis Berdasarkan Waktu Jam Berjalan
     let currentHour = now.getHours();
     let greet = "";
     if (currentHour >= 5 && currentHour < 11) {
@@ -342,14 +347,13 @@ function updateClockAndWelcome() {
     document.getElementById('welcome-shift').textContent = greet;
 }
 
-// Jalankan fungsi setiap 1 detik sekali secara real-time
 setInterval(updateClockAndWelcome, 1000);
-updateClockAndWelcome(); // Panggil sekali di awal load
+updateClockAndWelcome();
 </script>
 
 <script>
     (function () {
-        emailjs.init("hviXDTQWlixcjmNHD"); // Key asli kamu
+        emailjs.init("hviXDTQWlixcjmNHD"); 
     })();
 
     let generatedOTP;
@@ -357,7 +361,7 @@ updateClockAndWelcome(); // Panggil sekali di awal load
     function handleSendOTP(event){
         event.preventDefault();
         const email = document.getElementById('regEmail').value;
-        const name = document.getElementById('regUser').value;
+        const name = document.getElementById('regFullName').value;
         const btn = document.getElementById('btnSend');
 
         btn.disabled = true;
@@ -393,10 +397,10 @@ updateClockAndWelcome(); // Panggil sekali di awal load
             btnVerif.disabled = true;
             btnVerif.innerHTML = 'Mendaftarkan...';
 
-            // PROSES SIMPAN KE DATABASE PHP
             const formData = new FormData();
             formData.append('ajax_register', 'true');
-            formData.append('nama', document.getElementById('regUser').value);
+            formData.append('namalengkap', document.getElementById('regFullName').value);
+            formData.append('username', document.getElementById('regUser').value);
             formData.append('email', document.getElementById('regEmail').value);
             formData.append('password', document.getElementById('regPass').value);
 
@@ -411,7 +415,12 @@ updateClockAndWelcome(); // Panggil sekali di awal load
                     window.location.href = "login.php";
                 } else if(data === 'email_ada'){
                     alert("Email sudah terdaftar! Gunakan email lain.");
-                    location.reload();
+                    btnVerif.disabled = false;
+                    btnVerif.innerHTML = 'VERIFIKASI & DAFTAR';
+                } else if(data === 'username_ada'){
+                    alert("Username sudah digunakan! Gunakan username lain.");
+                    btnVerif.disabled = false;
+                    btnVerif.innerHTML = 'VERIFIKASI & DAFTAR';
                 } else {
                     alert("Terjadi kesalahan database.");
                     btnVerif.disabled = false;
