@@ -1,9 +1,8 @@
 <?php
-session_start();
-require '../config/config.php';
+require 'config/config.php';
 
 if (!isset($_SESSION['isLoggedIn'])) {
-    header("Location: ../login.php"); exit();
+    header("Location: login.php"); exit();
 }
 
 // Sesuaikan dengan kolom 'id' di tabel users
@@ -88,9 +87,9 @@ foreach ($all_rows as $r) {
 </head>
 <body>
 <div class="wrapper-utama">
-    <?php include '../assets/sidebar.php'; ?>
+    <?php include 'assets/sidebar.php'; ?>
     <div class="area-konten-kanan">
-        <?php include '../assets/navbar.php'; ?>
+        <?php include 'assets/navbar.php'; ?>
         <div class="main-scroll">
 
             <div class="d-flex justify-content-between align-items-center mb-4">

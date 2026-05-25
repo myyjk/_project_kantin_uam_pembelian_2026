@@ -18,7 +18,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Ambil data dari form
     $userIn = mysqli_real_escape_string($conn, $_POST['username']);
     $passIn = $_POST['password'];
-    $keyIn  = mysqli_real_escape_string($conn, $_POST['accessKey']);
+    
 
     // Cari di database berdasarkan nama atau email
     $query = "SELECT u.*, r.kode as koderole, r.nama as namarole FROM users u left join roles r on u.id_role = r.id WHERE username  = '$userIn' OR email = '$userIn' LIMIT 1";
@@ -314,13 +314,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         </div>
                     </div>
 
-                    <div class="mb-4">
-                        <label class="form-label small fw-bold">Access Key <span class="optional-badge">Opsional</span></label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-key"></i></span>
-                            <input type="text" name="accessKey" class="form-control" placeholder="Masukkan key (jika admin)">
-                        </div>
-                    </div>
+                   
 
                     <div class="d-grid mb-3">
                         <button type="submit" class="btn btn-uam">
