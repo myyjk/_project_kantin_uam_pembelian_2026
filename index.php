@@ -1,45 +1,22 @@
 <?php
-session_start();
-
-// Proteksi login
-if (!isset($_SESSION['isLoggedIn'])) {
-    header("Location: login/login.php");
-    exit();
-}
-
-// Ambil parameter page
-$page = isset($_GET['page']) ? $_GET['page'] : 'pembeli';
+// Mengambil parameter 'page' dari URL, jika kosong default ke 'home'
+$page = isset($_GET['page']) ? $_GET['page'] : 'home';
 
 switch ($page) {
-
-    case 'pembeli':
     case 'pembelian':
+        // Ini akan memanggil file pembelian.php yang ada di dalam folder pembeli
         include 'pembeli/pembelian.php';
         break;
-
+        
     case 'transaksi':
         include 'transaksi/transaksi.php';
         break;
 
-    case 'transaksi_tambah':
-        include 'transaksi/tambah_transaksi.php';
-        break;
-
-    case 'transaksi_edit':
-        include 'transaksi/edit_transaksi.php';
-        break;
-
-    case 'transaksi_detail':
-        include 'transaksi/detail_transaksi.php';
-        break;
-
-    case 'piutang':
-    case 'hutang':
-        include 'piutang/piutang.php';
-        break;
-
+    // Tambahkan case lain di sini sesuai nama folder dan filemu
+    
     default:
-        include 'pembeli/pembelian.php';
+        // Halaman utama jika tidak ada parameter ?page=
+        echo "<h1>Selamat Datang di Dashboard</h1>"; 
         break;
 }
 ?>
