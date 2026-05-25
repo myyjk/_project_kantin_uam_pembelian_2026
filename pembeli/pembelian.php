@@ -260,7 +260,7 @@ function render() {
         const stokReal   = p.stok !== null ? parseInt(p.stok) : 0;
         const displayStok= stokReal < 0 ? 0 : stokReal;
         const gambar     = (p.foto && p.foto.trim() !== '')
-            ? `<img src="pembeli/uploads/${p.foto}">`
+            ? `<img src="uploads/${p.foto}">`
             : `<i class="fas fa-hamburger fa-2x text-secondary opacity-25"></i>`;
         list.innerHTML += `
         <div class="col-xl-4 col-md-4 col-6">
