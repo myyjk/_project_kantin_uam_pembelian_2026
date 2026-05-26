@@ -16,10 +16,12 @@ if ($admin_id === 0) {
     $nama_session = $_SESSION['currentUser']['nama'] ?? $_SESSION['currentUser']['username'] ?? $_SESSION['currentUser']['name'] ?? '';
     if ($nama_session !== '') {
         $ns = mysqli_real_escape_string($conn, $nama_session);
+        // coba tabel users
         $r = mysqli_query($conn, "SELECT id FROM users WHERE nama='$ns' OR username='$ns' LIMIT 1");
         if ($r && mysqli_num_rows($r) > 0) {
             $admin_id = (int)mysqli_fetch_assoc($r)['id'];
         }
+        // coba tabel admin
         if ($admin_id === 0) {
             $r2 = mysqli_query($conn, "SELECT id_admin FROM admin WHERE nama='$ns' OR username='$ns' LIMIT 1");
             if ($r2 && mysqli_num_rows($r2) > 0) {
@@ -46,6 +48,7 @@ $admin_nama = $_SESSION['currentUser']['nama'] ?? 'Petugas';
 // ==========================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'checkout') {
 
+    // Auto-fix foreign key
     mysqli_query($conn, "ALTER TABLE detail_beli DROP FOREIGN KEY fk_detail_produk");
     mysqli_query($conn, "ALTER TABLE detail_beli ADD CONSTRAINT fk_detail_barang_baru FOREIGN KEY (id_produk) REFERENCES barang(id) ON UPDATE CASCADE ON DELETE RESTRICT");
 
@@ -54,6 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $total_bayar  = floatval($_POST['total']   ?? 0);
     $dibayar      = floatval($_POST['dibayar'] ?? 0);
 
+    // Generate no_faktur
     if ($metode_pilih === 'Hutang') {
         $no_faktur = mysqli_real_escape_string($conn, $_POST['no_faktur'] ?? '');
         if (empty($no_faktur)) {
@@ -69,6 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
     $tanggal_beli = date('Y-m-d H:i:s');
 
+    // INSERT pembelian
     $q = "INSERT INTO pembelian (no_faktur, tanggal_beli, id_admin, id_vendor, metode)
           VALUES ('$no_faktur','$tanggal_beli','$admin_id','$id_vendor','$metode_pilih')";
 
@@ -97,6 +102,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         }
     }
 
+    // ══════════════════════════════════════════════════════
+    // OTOMATIS MASUK KE TRANSAKSI
+    // ══════════════════════════════════════════════════════
     {
         mysqli_query($conn, "CREATE TABLE IF NOT EXISTS `transaksi` (
             `id_transaksi`      INT(11) NOT NULL AUTO_INCREMENT,
@@ -265,56 +273,18 @@ $vendor_db = ($r = mysqli_query($conn,"SELECT * FROM vendor"))  ? mysqli_fetch_a
 let productsData = <?= json_encode($barang_db) ?>;
 let cart = [];
 
-// =====================================================
-// FIX: Konversi URL foto (Google Drive / lokal / dll)
-// =====================================================
-function getFotoUrl(foto) {
-    if (!foto || foto.trim() === '') return null;
-
-    const f = foto.trim();
-
-    // Google Drive: https://drive.google.com/file/d/FILE_ID/...
-    if (f.includes('drive.google.com/file/d/')) {
-        const match = f.match(/\/d\/([a-zA-Z0-9_-]+)/);
-        if (match) {
-            return 'https://drive.google.com/thumbnail?id=' + match[1] + '&sz=w300';
-        }
-    }
-
-    // Google Drive: https://drive.google.com/open?id=FILE_ID
-    if (f.includes('drive.google.com/open?id=')) {
-        const match = f.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-        if (match) {
-            return 'https://drive.google.com/thumbnail?id=' + match[1] + '&sz=w300';
-        }
-    }
-
-    // URL eksternal lainnya (http/https)
-    if (f.startsWith('http://') || f.startsWith('https://')) {
-        return f;
-    }
-
-    // Foto lokal di folder uploads/
-    return 'uploads/' + f;
-}
-
 function render() {
     const list  = document.getElementById('productList');
     const query = document.getElementById('searchBox').value.toLowerCase();
     const filtered = productsData.filter(p => p.nama && p.nama.toLowerCase().includes(query));
     list.innerHTML = '';
     filtered.forEach(p => {
-        const harga       = parseInt(p.harga_jual) || 0;
-        const stokReal    = p.stok !== null ? parseInt(p.stok) : 0;
-        const displayStok = stokReal < 0 ? 0 : stokReal;
-
-        // ── FIX GAMBAR ──
-        const fotoUrl = getFotoUrl(p.foto);
-        const gambar  = fotoUrl
-            ? `<img src="${fotoUrl}"
-                    onerror="this.style.display='none';this.parentElement.innerHTML+='<i class=\\'fas fa-hamburger fa-2x text-secondary opacity-25\\'></i>'">`
+        const harga      = parseInt(p.harga_jual) || 0;
+        const stokReal   = p.stok !== null ? parseInt(p.stok) : 0;
+        const displayStok= stokReal < 0 ? 0 : stokReal;
+        const gambar     = (p.foto && p.foto.trim() !== '')
+            ? `<img src="uploads/${p.foto}">`
             : `<i class="fas fa-hamburger fa-2x text-secondary opacity-25"></i>`;
-
         list.innerHTML += `
         <div class="col-xl-4 col-md-4 col-6">
           <div class="card-item p-2 shadow-sm" onclick="addToCart(${p.id})">
