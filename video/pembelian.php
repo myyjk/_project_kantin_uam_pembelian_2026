@@ -1,46 +1,8 @@
 <?php
 if (!isset($conn)) require_once __DIR__ . '/../config/config.php';
 
-// ── Ambil admin_id dari semua kemungkinan key session ──
-$admin_id = 0;
-$possible_keys = ['id','id_admin','id_petugas','id_kasir','id_user','user_id','userid'];
-foreach ($possible_keys as $key) {
-    if (!empty($_SESSION['currentUser'][$key])) {
-        $admin_id = (int)$_SESSION['currentUser'][$key];
-        break;
-    }
-}
 
-// ── Fallback: cari id dari tabel users/admin berdasarkan nama session ──
-if ($admin_id === 0) {
-    $nama_session = $_SESSION['currentUser']['nama'] ?? $_SESSION['currentUser']['username'] ?? $_SESSION['currentUser']['name'] ?? '';
-    if ($nama_session !== '') {
-        $ns = mysqli_real_escape_string($conn, $nama_session);
-        // coba tabel users
-        $r = mysqli_query($conn, "SELECT id FROM users WHERE nama='$ns' OR username='$ns' LIMIT 1");
-        if ($r && mysqli_num_rows($r) > 0) {
-            $admin_id = (int)mysqli_fetch_assoc($r)['id'];
-        }
-        // coba tabel admin
-        if ($admin_id === 0) {
-            $r2 = mysqli_query($conn, "SELECT id_admin FROM admin WHERE nama='$ns' OR username='$ns' LIMIT 1");
-            if ($r2 && mysqli_num_rows($r2) > 0) {
-                $admin_id = (int)mysqli_fetch_assoc($r2)['id_admin'];
-            }
-        }
-    }
-}
-
-// ── Fallback terakhir: ambil id pertama dari tabel users ──
-if ($admin_id === 0) {
-    $r3 = mysqli_query($conn, "SELECT id FROM users LIMIT 1");
-    if ($r3 && mysqli_num_rows($r3) > 0) $admin_id = (int)mysqli_fetch_assoc($r3)['id'];
-}
-if ($admin_id === 0) {
-    $r4 = mysqli_query($conn, "SELECT id_admin FROM admin LIMIT 1");
-    if ($r4 && mysqli_num_rows($r4) > 0) $admin_id = (int)mysqli_fetch_assoc($r4)['id_admin'];
-}
-
+$admin_id   = $_SESSION['currentUser']['id'] ?? $_SESSION['currentUser']['id_admin'] ?? null;
 $admin_nama = $_SESSION['currentUser']['nama'] ?? 'Petugas';
 
 // ==========================================
@@ -65,6 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             exit();
         }
     } else {
+        // Tunai: generate INV-YYYYXXXX rapi
         $tahun   = date('Y');
         $res_seq = mysqli_query($conn, "SELECT COUNT(*)+1 AS seq FROM pembelian WHERE YEAR(tanggal_beli)='$tahun'");
         $seq     = $res_seq ? ((int)(mysqli_fetch_assoc($res_seq)['seq'] ?? 1)) : 1;
@@ -91,6 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $qty       = (int)$item['qty'];
             $harga     = floatval($item['price']);
 
+            // detail_beli
             $qd = "INSERT INTO detail_beli (id_beli, id_produk, jumlah, harga)
                    VALUES ('$id_beli_baru','$id_produk','$qty','$harga')";
             if (!mysqli_query($conn, $qd)) {
@@ -98,14 +62,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 exit();
             }
 
+            // Kurangi stok
             mysqli_query($conn, "UPDATE barang SET stok = stok - $qty WHERE id = $id_produk");
         }
     }
 
     // ══════════════════════════════════════════════════════
-    // OTOMATIS MASUK KE TRANSAKSI
+    // OTOMATIS MASUK KE TRANSAKSI (semua metode: Tunai & Hutang)
     // ══════════════════════════════════════════════════════
     {
+
+        // Buat tabel transaksi jika belum ada
         mysqli_query($conn, "CREATE TABLE IF NOT EXISTS `transaksi` (
             `id_transaksi`      INT(11) NOT NULL AUTO_INCREMENT,
             `no_faktur`         VARCHAR(30) NOT NULL,
@@ -119,6 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             PRIMARY KEY (`id_transaksi`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+        // Buat tabel detail_transaksi jika belum ada
         mysqli_query($conn, "CREATE TABLE IF NOT EXISTS `detail_transaksi` (
             `id_detail`    INT(11) NOT NULL AUTO_INCREMENT,
             `id_transaksi` INT(11) NOT NULL,
@@ -131,13 +99,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
         $tanggal_trx = date('Y-m-d');
-        $status_trx  = ($metode_pilih === 'Tunai') ? 'lunas' : 'pending';
 
+        // Insert header transaksi
         $qt = "INSERT INTO transaksi (no_faktur, id_beli, tanggal, metode_pembayaran, total_harga, status)
-               VALUES ('$no_faktur','$id_beli_baru','$tanggal_trx','$metode_pilih','$total_bayar','$status_trx')";
+               VALUES ('$no_faktur', '$id_beli_baru', '$tanggal_trx', '$metode_pilih', '$total_bayar', '" . ($metode_pilih === 'Tunai' ? 'lunas' : 'pending') . "')";
 
         if (mysqli_query($conn, $qt)) {
             $id_trx_baru = mysqli_insert_id($conn);
+
+            // Insert detail_transaksi per item
             if (is_array($items)) {
                 foreach ($items as $item) {
                     $id_produk = (int)$item['id'];
@@ -150,7 +120,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             }
         }
     }
+    // Hutang → tidak masuk transaksi (masuk piutang)
 
+    // Stok terbaru untuk dikembalikan ke JS
     $stok_res  = mysqli_query($conn, "SELECT id, stok FROM barang");
     $stok_baru = mysqli_fetch_all($stok_res, MYSQLI_ASSOC);
 
@@ -190,6 +162,8 @@ $vendor_db = ($r = mysqli_query($conn,"SELECT * FROM vendor"))  ? mysqli_fetch_a
         .checkout-box{padding:20px;background:#fff9f5;border-top:2px solid var(--uam-orange)}
         .hidden{display:none!important}
         .qty-control .btn{padding:2px 8px;font-size:.75rem}
+
+        /* Toast sukses */
         #toastSukses{
             display:none;position:fixed;bottom:24px;right:24px;z-index:9999;
             background:#16a34a;color:#fff;padding:14px 22px;border-radius:14px;
@@ -263,7 +237,10 @@ $vendor_db = ($r = mysqli_query($conn,"SELECT * FROM vendor"))  ? mysqli_fetch_a
     </div>
 </div>
 
-<div id="toastSukses">
+<!-- Toast notifikasi sukses -->
+<div id="toastSukses" style="display:none;position:fixed;bottom:24px;right:24px;z-index:9999;
+     background:#16a34a;color:#fff;padding:14px 22px;border-radius:14px;font-weight:600;
+     font-size:.9rem;box-shadow:0 8px 24px rgba(0,0,0,.2);align-items:center;gap:10px;">
     <i class="fas fa-check-circle fa-lg"></i>
     <span id="toastMsg">Transaksi berhasil disimpan!</span>
     <a id="toastLink" href="#" style="color:#bbf7d0;margin-left:8px;font-size:.82rem;text-decoration:underline"></a>
@@ -371,7 +348,7 @@ function toggleHutang() {
 
 function tampilToast(pesan, link='', linkTeks='') {
     const t = document.getElementById('toastSukses');
-    document.getElementById('toastMsg').textContent = pesan;
+    document.getElementById('toastMsg').textContent  = pesan;
     const a = document.getElementById('toastLink');
     if (link) { a.href = link; a.textContent = linkTeks; }
     else { a.textContent = ''; }
@@ -402,13 +379,14 @@ function checkout() {
 
     fetch((() => {
         const p = window.location.pathname;
-        return p.endsWith('index.php') || p.endsWith('/') || p.endsWith('_project_26/')
-               ? 'pembeli/pembelian.php'
+        return p.endsWith('index.php') || p.endsWith('/') || p.endsWith('_project_26/') 
+               ? 'pembeli/pembelian.php' 
                : 'pembelian.php';
     })(), {method:'POST', body:formData})
     .then(r => r.json())
     .then(res => {
         if (res.status==='sukses') {
+            // Update stok lokal
             res.stok_baru.forEach(db => {
                 let lk = productsData.find(p => p.id==db.id);
                 if (lk) lk.stok = db.stok;
@@ -418,6 +396,7 @@ function checkout() {
             document.getElementById('methodSelect').value = 'Tunai';
             toggleHutang(); render(); renderCart();
 
+            // Tampil toast untuk semua metode
             const labelMetode = metode === 'Tunai' ? '💵 Tunai' : '📋 Hutang';
             tampilToast(
                 '✅ ' + labelMetode + ' - ' + res.no_faktur + ' berhasil disimpan!',

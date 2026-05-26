@@ -1,16 +1,12 @@
 <?php
+ob_start(); // ← tambahkan ini di baris PERTAMA
 if(!isset($conn)) require_once __DIR__.'/../config/config.php';
 
 $title = "Data Transaksi";
 
 // Hapus transaksi
 if (isset($_GET['hapus'])) {
-    $id = intval($_GET['hapus']);
-    $det = mysqli_query($conn, "SELECT id_produk, jumlah FROM detail_transaksi WHERE id_transaksi=$id");
-    if ($det) while ($d = mysqli_fetch_assoc($det))
-        mysqli_query($conn, "UPDATE barang SET stok = stok + {$d['jumlah']} WHERE id = {$d['id_produk']}");
-    mysqli_query($conn, "DELETE FROM transaksi WHERE id_transaksi=$id");
-    header("Location: '?page=transaksi&msg=hapus' "); exit;
+    header("Location: transaksi.php?msg=hapus"); exit; // ← perbaiki ini
 }
 
 // Ambil semua transaksi
