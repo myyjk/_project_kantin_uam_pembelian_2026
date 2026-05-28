@@ -3,7 +3,7 @@ session_start();
 require '../config/config.php';
 
 if (!isset($_SESSION['isLoggedIn'])) {
-    header("Location: login/login.php"); exit();
+    header("Location: ../login.php"); exit();
 }
 
 // Sesuaikan dengan kolom 'id' di tabel users
