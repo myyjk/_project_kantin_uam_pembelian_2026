@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: May 28, 2026 at 03:52 AM
+-- Generation Time: May 28, 2026 at 08:50 AM
 -- Server version: 8.0.30
 -- PHP Version: 8.1.10
 
@@ -48,11 +48,11 @@ CREATE TABLE `barang` (
 --
 
 INSERT INTO `barang` (`id`, `nama`, `id_kat`, `stok`, `harga_beli`, `harga_jual`, `foto`, `foto_jual`, `aktif`, `created_at`, `updated_at`, `barcode`, `jenis_menu`) VALUES
-(1, 'Es teh ', 1, -21, '4000.00', '5000.00', 'esteh.png', NULL, 1, '2026-05-13 15:46:59', '2026-05-28 10:47:37', NULL, 'makanan'),
-(2, 'es jeruk', 1, 6, '2500.00', '5000.00', 'esjeruk.jpg', NULL, 1, '2026-05-20 10:53:37', '2026-05-28 10:41:52', NULL, 'makanan'),
-(3, 'gacoan', 2, -14, '10000.00', '15000.00', 'gacoan.jpg', NULL, 1, '2026-05-20 11:20:03', '2026-05-28 10:41:52', NULL, 'makanan'),
-(4, 'Ultra milk', NULL, -29, '20000.00', '22000.00', 'ultramilk.png', NULL, 1, '2026-05-25 09:20:33', '2026-05-28 10:41:52', NULL, 'minuman'),
-(5, 'Ayam KFC', NULL, -16, '50000.00', '80000.00', 'https://drive.google.com/file/d/1r8yMMNbFzsguaq1dq55S6JE6XJ3AlcOT/view?usp=drive_link', NULL, 1, '2026-05-26 12:04:53', '2026-05-28 10:42:09', NULL, 'makanan');
+(1, 'Es teh ', 1, -24, '4000.00', '5000.00', 'esteh.png', NULL, 1, '2026-05-13 15:46:59', '2026-05-28 15:22:28', NULL, 'makanan'),
+(2, 'es jeruk', 1, 2, '2500.00', '5000.00', 'esjeruk.jpg', NULL, 1, '2026-05-20 10:53:37', '2026-05-28 15:22:28', NULL, 'makanan'),
+(3, 'gacoan', 2, -20, '10000.00', '15000.00', 'gacoan.jpg', NULL, 1, '2026-05-20 11:20:03', '2026-05-28 15:22:28', NULL, 'makanan'),
+(4, 'Ultra milk', NULL, -33, '20000.00', '22000.00', 'ultramilk.png', NULL, 1, '2026-05-25 09:20:33', '2026-05-28 15:22:28', NULL, 'minuman'),
+(5, 'Ayam KFC', NULL, -20, '50000.00', '80000.00', 'https://drive.google.com/file/d/1r8yMMNbFzsguaq1dq55S6JE6XJ3AlcOT/view?usp=drive_link', NULL, 1, '2026-05-26 12:04:53', '2026-05-28 15:22:28', NULL, 'makanan');
 
 -- --------------------------------------------------------
 
@@ -73,35 +73,14 @@ CREATE TABLE `detail_beli` (
 --
 
 INSERT INTO `detail_beli` (`id_detail`, `id_beli`, `id_produk`, `jumlah`, `harga`) VALUES
-(41, 37, 2, 6, '5000.00'),
-(42, 38, 3, 8, '15000.00'),
-(43, 38, 2, 4, '5000.00'),
-(44, 38, 1, 3, '5000.00'),
-(45, 39, 3, 2, '15000.00'),
-(46, 39, 2, 2, '5000.00'),
-(47, 39, 1, 1, '5000.00'),
-(48, 40, 3, 10, '15000.00'),
-(49, 41, 1, 4, '5000.00'),
-(50, 42, 1, 5, '5000.00'),
-(51, 42, 4, 40, '22000.00'),
-(52, 42, 2, 10, '5000.00'),
-(53, 42, 3, 3, '15000.00'),
-(54, 43, 3, 1, '15000.00'),
-(55, 43, 4, 1, '22000.00'),
-(56, 44, 2, 4, '5000.00'),
-(57, 44, 3, 3, '15000.00'),
-(58, 45, 1, 5, '5000.00'),
-(59, 46, 1, 10, '5000.00'),
-(60, 46, 2, 6, '5000.00'),
-(61, 46, 3, 2, '15000.00'),
-(62, 46, 5, 2, '80000.00'),
-(63, 46, 4, 1, '22000.00'),
-(64, 47, 2, 1, '5000.00'),
-(65, 47, 3, 1, '15000.00'),
-(66, 47, 4, 1, '22000.00'),
-(67, 47, 5, 12, '80000.00'),
-(68, 48, 5, 2, '80000.00'),
-(69, 49, 1, 1, '5000.00');
+(77, 53, 4, 1, '22000.00'),
+(78, 53, 3, 1, '15000.00'),
+(79, 53, 2, 1, '5000.00'),
+(80, 54, 5, 1, '80000.00'),
+(81, 54, 4, 1, '22000.00'),
+(82, 54, 3, 1, '15000.00'),
+(83, 54, 2, 1, '5000.00'),
+(84, 54, 1, 1, '5000.00');
 
 -- --------------------------------------------------------
 
@@ -171,9 +150,14 @@ CREATE TABLE `detail_transaksi` (
 --
 
 INSERT INTO `detail_transaksi` (`id_detail`, `id_transaksi`, `id_produk`, `jumlah`, `harga`, `subtotal`) VALUES
-(5, 2, 2, 4, '5000.00', '20000.00'),
-(6, 2, 3, 3, '15000.00', '45000.00'),
-(7, 3, 1, 5, '5000.00', '25000.00');
+(15, 7, 4, 1, '22000.00', '22000.00'),
+(16, 7, 3, 1, '15000.00', '15000.00'),
+(17, 7, 2, 1, '5000.00', '5000.00'),
+(18, 8, 5, 1, '80000.00', '80000.00'),
+(19, 8, 4, 1, '22000.00', '22000.00'),
+(20, 8, 3, 1, '15000.00', '15000.00'),
+(21, 8, 2, 1, '5000.00', '5000.00'),
+(22, 8, 1, 1, '5000.00', '5000.00');
 
 -- --------------------------------------------------------
 
@@ -219,7 +203,11 @@ INSERT INTO `pembayaran_hutang` (`id_pembayaran`, `id_beli`, `nominal`, `tanggal
 (3, 37, '30000.00', '2026-05-20 06:53:29', 'bayar_37_1779252809.jpg'),
 (4, 39, '45000.00', '2026-05-20 07:28:16', 'bayar_39_1779254896.jpg'),
 (5, 38, '55000.00', '2026-05-21 04:14:06', 'bayar_38_1779329646.jpg'),
-(6, 45, '25000.00', '2026-05-26 07:00:22', 'bayar_45_1779771622.jpg');
+(6, 45, '25000.00', '2026-05-26 07:00:22', 'bayar_45_1779771622.jpg'),
+(7, 51, '242333.00', '2026-05-28 08:01:36', 'bayar_51_1779948096.png'),
+(8, 51, '91667.00', '2026-05-28 08:02:08', 'bayar_51_1779948128.jpg'),
+(9, 52, '15000.00', '2026-05-28 08:38:53', 'bayar_52_1779950333.jpeg'),
+(10, 53, '42000.00', '2026-05-28 10:22:01', 'bayar_53_1779956521.jpg');
 
 -- --------------------------------------------------------
 
@@ -247,19 +235,8 @@ CREATE TABLE `pembelian` (
 --
 
 INSERT INTO `pembelian` (`id_beli`, `no_faktur`, `tanggal_beli`, `id_admin`, `id_vendor`, `metode`, `metode_pembayaran`, `total_bayar`, `dibayar`, `sisa_hutang`, `status`, `foto_faktur`) VALUES
-(37, '15000', '2026-05-20 06:51:08', 3, 2, 'Hutang', NULL, NULL, NULL, NULL, NULL, NULL),
-(38, '1234567890', '2026-05-20 07:00:10', 3, 1, 'Hutang', NULL, NULL, NULL, NULL, NULL, NULL),
-(39, '1234567890', '2026-05-20 07:28:05', 3, 1, 'Hutang', NULL, NULL, NULL, NULL, NULL, NULL),
-(40, '123142', '2026-05-25 03:51:29', 3, 2, 'Hutang', NULL, NULL, NULL, NULL, NULL, NULL),
-(41, 'INV-20260005', '2026-05-25 03:51:44', 3, 1, 'Tunai', NULL, NULL, NULL, NULL, NULL, NULL),
-(42, '2364263', '2026-05-25 05:35:56', 3, 1, 'Hutang', NULL, NULL, NULL, NULL, NULL, NULL),
-(43, 'INV-1779691771-666', '2026-05-25 08:49:31', 3, 1, 'Tunai', NULL, NULL, NULL, NULL, NULL, NULL),
-(44, 'INV-20260008', '2026-05-26 04:18:52', 1, 1, 'Tunai', NULL, NULL, NULL, NULL, NULL, NULL),
-(45, 'INV-20260009', '2026-05-26 04:18:59', 1, 1, 'Tunai', NULL, NULL, NULL, NULL, NULL, NULL),
-(46, '13141', '2026-05-26 07:22:37', 3, 2, 'Hutang', NULL, NULL, NULL, NULL, NULL, NULL),
-(47, '3463575', '2026-05-28 05:41:52', 3, 1, 'Hutang', NULL, NULL, NULL, NULL, NULL, NULL),
-(48, '5235235', '2026-05-28 05:42:09', 3, 1, 'Hutang', NULL, NULL, NULL, NULL, NULL, NULL),
-(49, '235', '2026-05-28 05:47:37', 3, 2, 'Hutang', NULL, NULL, NULL, NULL, NULL, NULL);
+(53, '12345', '2026-05-28 10:21:41', 3, 1, 'Hutang', NULL, NULL, NULL, NULL, NULL, NULL),
+(54, 'INV-20260002', '2026-05-28 10:22:28', 3, 2, 'Tunai', NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -414,7 +391,7 @@ CREATE TABLE `transaksi` (
   `no_faktur` varchar(30) NOT NULL,
   `id_beli` int NOT NULL,
   `tanggal` date NOT NULL,
-  `metode_pembayaran` enum('tunai','transfer','kredit') NOT NULL DEFAULT 'tunai',
+  `metode_pembayaran` enum('tunai','hutang') NOT NULL DEFAULT 'tunai',
   `total_harga` decimal(15,2) NOT NULL DEFAULT '0.00',
   `status` enum('pending','lunas','batal') NOT NULL DEFAULT 'pending',
   `keterangan` text,
@@ -426,8 +403,8 @@ CREATE TABLE `transaksi` (
 --
 
 INSERT INTO `transaksi` (`id_transaksi`, `no_faktur`, `id_beli`, `tanggal`, `metode_pembayaran`, `total_harga`, `status`, `keterangan`, `created_at`) VALUES
-(2, 'INV-20260008', 44, '2026-05-26', 'tunai', '65000.00', 'lunas', NULL, '2026-05-26 02:18:52'),
-(3, 'INV-20260009', 45, '2026-05-26', 'tunai', '25000.00', 'lunas', NULL, '2026-05-26 02:18:59');
+(7, '12345', 53, '2026-05-28', 'hutang', '42000.00', 'lunas', NULL, '2026-05-28 08:21:41'),
+(8, 'INV-20260002', 54, '2026-05-28', 'tunai', '127000.00', 'lunas', NULL, '2026-05-28 08:22:28');
 
 -- --------------------------------------------------------
 
@@ -455,7 +432,7 @@ CREATE TABLE `users` (
 INSERT INTO `users` (`id`, `id_role`, `username`, `namalengkap`, `email`, `password`, `foto`, `telepon`, `created_at`, `updated_at`) VALUES
 (1, 1, 'admin', 'Administrator', 'admin@kantin.id', 'uamkantin', NULL, NULL, '2026-05-04 10:05:00', '2026-05-04 15:46:52'),
 (2, 2, 'Davin Nur', 'Muhammad Davin Nur Ardiyanto', 'mdavinnura16@gmail.com', '$2y$12$8ZBDmowH9itWLq5jxPUYM.LlLWt3AGK0iU2/UuvMwkngWPL5eieES', NULL, '085851779038', '2026-05-11 15:40:06', '2026-05-25 08:41:30'),
-(3, 2, 'sastra', 'Rahmatullah Sastra Ardiansyah', 'rahmatullahsastraardiansyah@gmail.com', '$2a$12$R5OyAUZutshrT5WMqWsp5OAMFsADpZ9GHN4bFTyIeLAzKSCSJGJpS', 'profil_3_1779253022.jpg', '12345', '2026-05-19 12:56:05', '2026-05-20 06:57:02'),
+(3, 2, 'sastra', 'Rahmatullah Sastra Ardiansyah', 'rahmatullahsastraardiansyah@gmail.com', '$2a$12$R5OyAUZutshrT5WMqWsp5OAMFsADpZ9GHN4bFTyIeLAzKSCSJGJpS', 'profil_3_1779956623.png', '12345', '2026-05-19 12:56:05', '2026-05-28 10:23:43'),
 (4, 2, 'tes', 'testing', 'modeprivasi18@gmail.com', '$2a$12$OMrVziQTloXK1uSWmP/uOOs6H8C4UPyUsCAVAJ7LDN1dtj6FtX5Ti', NULL, NULL, '2026-05-20 12:35:17', '2026-05-20 12:37:11');
 
 -- --------------------------------------------------------
@@ -474,8 +451,8 @@ CREATE TABLE `vendor` (
 --
 
 INSERT INTO `vendor` (`id_vendor`, `nama`) VALUES
-(1, 'sastra1'),
-(2, 'testing');
+(1, 'sastra'),
+(2, 'Davin');
 
 --
 -- Indexes for dumped tables
@@ -612,7 +589,7 @@ ALTER TABLE `barang`
 -- AUTO_INCREMENT for table `detail_beli`
 --
 ALTER TABLE `detail_beli`
-  MODIFY `id_detail` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=70;
+  MODIFY `id_detail` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=85;
 
 --
 -- AUTO_INCREMENT for table `detail_penjualan`
@@ -624,7 +601,7 @@ ALTER TABLE `detail_penjualan`
 -- AUTO_INCREMENT for table `detail_transaksi`
 --
 ALTER TABLE `detail_transaksi`
-  MODIFY `id_detail` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id_detail` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `kategori`
@@ -636,13 +613,13 @@ ALTER TABLE `kategori`
 -- AUTO_INCREMENT for table `pembayaran_hutang`
 --
 ALTER TABLE `pembayaran_hutang`
-  MODIFY `id_pembayaran` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id_pembayaran` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `pembelian`
 --
 ALTER TABLE `pembelian`
-  MODIFY `id_beli` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
+  MODIFY `id_beli` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=55;
 
 --
 -- AUTO_INCREMENT for table `penjualan`
@@ -678,7 +655,7 @@ ALTER TABLE `statistik`
 -- AUTO_INCREMENT for table `transaksi`
 --
 ALTER TABLE `transaksi`
-  MODIFY `id_transaksi` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id_transaksi` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `users`

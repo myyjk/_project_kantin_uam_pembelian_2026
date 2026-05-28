@@ -94,6 +94,16 @@ $insert = "INSERT INTO pembayaran_hutang (id_beli, nominal, tanggal, foto_faktur
 
 if (mysqli_query($conn, $insert)) {
     $sisa_setelah = $sisa_hutang - $nominal_bayar;
+
+    // ✅ Update status transaksi jika sudah lunas
+    if ($sisa_setelah <= 0) {
+        $update_trx = "UPDATE transaksi 
+                       SET status = 'lunas', metode_pembayaran = 'hutang'
+                       WHERE id_beli = '$id_beli' 
+                       AND LOWER(metode_pembayaran) = 'hutang'";
+        mysqli_query($conn, $update_trx);
+    }
+
     $pesan = $sisa_setelah <= 0 
         ? '✅ Pembayaran berhasil! Hutang transaksi ini dinyatakan LUNAS.' 
         : '✅ Pembayaran berhasil dicatat! Sisa hutang saat ini: Rp ' . number_format($sisa_setelah, 0, ',', '.');
