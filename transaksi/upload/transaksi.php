@@ -1,22 +1,24 @@
 <?php
-ob_start();
+ob_start(); // ← tambahkan ini di baris PERTAMA
 if(!isset($conn)) require_once __DIR__.'/../config/config.php';
 
 $title = "Data Transaksi";
 
-// Ambil semua transaksi (case-insensitive fix untuk Hutang)
+// Hapus transaksi
+if (isset($_GET['hapus'])) {
+    header("Location: transaksi.php?msg=hapus"); exit; // ← perbaiki ini
+}
+
+// Ambil semua transaksi
 $sql = "SELECT t.*,
                COALESCE(p.nama, CONCAT('Pembeli #', t.id_beli)) AS nama_pembeli
         FROM transaksi t
         LEFT JOIN pembelian p ON t.id_beli = p.id_beli
-        WHERE LOWER(t.metode_pembayaran) IN ('tunai','hutang')
         ORDER BY t.created_at DESC, t.id_transaksi DESC";
 $result = mysqli_query($conn, $sql);
 if (!$result) {
     $result = mysqli_query($conn, "SELECT t.*, CONCAT('Pembeli #',t.id_beli) AS nama_pembeli
-                                   FROM transaksi t
-                                   WHERE LOWER(t.metode_pembayaran) IN ('tunai','hutang')
-                                   ORDER BY t.id_transaksi DESC");
+                                   FROM transaksi t ORDER BY t.id_transaksi DESC");
 }
 $transaksi = [];
 if ($result) while ($row = mysqli_fetch_assoc($result)) $transaksi[] = $row;
@@ -53,10 +55,12 @@ $total_omzet   = array_sum(array_column(array_filter($transaksi,fn($r)=>$r['stat
     * { box-sizing: border-box; }
     body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--light-bg); color: var(--dark); margin: 0; }
 
+    /* ── WRAPPER ── */
     .wrapper-utama { display: flex; min-height: 100vh; }
     .area-kanan    { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     .konten-utama  { flex: 1; padding: 28px; overflow-y: auto; }
 
+    /* ── PAGE HEADER ── */
     .page-header {
       background: linear-gradient(135deg, var(--black) 0%, #2d2d2d 100%);
       border-radius: 16px;
@@ -71,6 +75,7 @@ $total_omzet   = array_sum(array_column(array_filter($transaksi,fn($r)=>$r['stat
     .page-header small { opacity: .7; font-size: .82rem; }
     .page-header .accent { color: var(--orange); }
 
+    /* ── STAT CARDS ── */
     .stat-card {
       border-radius: 14px;
       padding: 1.2rem 1.4rem;
@@ -95,6 +100,7 @@ $total_omzet   = array_sum(array_column(array_filter($transaksi,fn($r)=>$r['stat
     .sc-dark   { background: linear-gradient(135deg, #343a40,       #6c757d); }
     .sc-black  { background: linear-gradient(135deg, var(--black),  #3d3d3d); }
 
+    /* ── TABLE CARD ── */
     .table-card {
       background: var(--white);
       border-radius: 16px;
@@ -127,6 +133,7 @@ $total_omzet   = array_sum(array_column(array_filter($transaksi,fn($r)=>$r['stat
       display: inline-block;
     }
 
+    /* ── TABLE ── */
     .table thead th {
       background: var(--black);
       color: #fff;
@@ -146,6 +153,7 @@ $total_omzet   = array_sum(array_column(array_filter($transaksi,fn($r)=>$r['stat
     }
     .table tbody tr:hover td { background: var(--orange-soft); }
 
+    /* ── FAKTUR LINK ── */
     .faktur-link {
       font-weight: 700;
       color: var(--orange);
@@ -155,23 +163,46 @@ $total_omzet   = array_sum(array_column(array_filter($transaksi,fn($r)=>$r['stat
     }
     .faktur-link:hover { color: var(--orange-dark); text-decoration: underline; }
 
+    /* ── BADGE STATUS ── */
     .bs { padding: .3em .8em; border-radius: 20px; font-size: .74rem; font-weight: 700; display: inline-flex; align-items: center; gap: .3rem; }
     .bs-lunas   { background: var(--green-soft); color: var(--green); border: 1px solid #a3d9be; }
     .bs-pending { background: #fff3cd; color: #856404; border: 1px solid #ffe08a; }
     .bs-batal   { background: #fde8e8; color: #b91c1c; border: 1px solid #fca5a5; }
 
+    /* ── BADGE METODE ── */
     .bm { padding: .3em .75em; border-radius: 20px; font-size: .74rem; font-weight: 600; display: inline-flex; align-items: center; gap: .3rem; }
-    .bm-tunai    { background: var(--orange-soft); color: var(--orange-dark); border: 1px solid #ffc89a; }
-    .bm-hutang   { background: #fff3cd; color: #856404; border: 1px solid #ffe08a; }
+    .bm-Tunai    { background: var(--orange-soft); color: var(--orange-dark); border: 1px solid #ffc89a; }
+    .bm-Hutang   { background: #fff3cd; color: #856404; border: 1px solid #ffe08a; }
     .bm-transfer { background: var(--green-soft);  color: var(--green);      border: 1px solid #a3d9be; }
 
+    /* ── BTN AKSI ── */
     .btn-aksi { width: 30px; height: 30px; padding: 0; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: .78rem; transition: .15s; }
 
+    /* ── SEARCH ── */
     .search-wrap { position: relative; }
     .search-wrap .fa-search { position: absolute; left: .85rem; top: 50%; transform: translateY(-50%); color: var(--gray); font-size: .8rem; }
     .input-search { border-radius: 10px; border: 1.5px solid var(--border); padding: .5rem 1rem .5rem 2.4rem; font-size: .86rem; width: 250px; font-family: inherit; transition: .2s; }
     .input-search:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(253,126,20,.12); }
 
+    /* ── BTN TAMBAH ── */
+    .btn-tambah-manual {
+      background: var(--orange);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: .5rem 1.2rem;
+      font-weight: 700;
+      font-size: .86rem;
+      font-family: inherit;
+      transition: .2s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+    }
+    .btn-tambah-manual:hover { background: var(--orange-dark); color: #fff; }
+
+    /* ── FOOTER TOTAL ── */
     .table-footer {
       background: var(--orange-soft);
       border-top: 2px solid #ffc89a;
@@ -182,7 +213,9 @@ $total_omzet   = array_sum(array_column(array_filter($transaksi,fn($r)=>$r['stat
       font-weight: 700;
     }
 
-    /* MODAL NOTA */
+    /* ════════════════════════════════
+       MODAL DETAIL NOTA — tema gelap
+    ════════════════════════════════ */
     .modal-nota .modal-content {
       background: #1a1a1a;
       border: none;
@@ -200,6 +233,7 @@ $total_omzet   = array_sum(array_column(array_filter($transaksi,fn($r)=>$r['stat
     .modal-nota .modal-title .accent { color: var(--orange); }
     .modal-nota .btn-close { filter: invert(1); opacity: .6; }
 
+    /* Nota putih di dalam */
     .nota-inner {
       background: #fff;
       border-radius: 14px;
@@ -224,6 +258,7 @@ $total_omzet   = array_sum(array_column(array_filter($transaksi,fn($r)=>$r['stat
     }
     .nota-divider { border: none; border-top: 2px dashed #e2e8f0; margin: 1rem 0; }
 
+    /* Tabel barang dalam nota */
     .tbl-nota { width: 100%; font-size: .83rem; border-collapse: collapse; }
     .tbl-nota thead th {
       background: var(--black);
@@ -240,11 +275,13 @@ $total_omzet   = array_sum(array_column(array_filter($transaksi,fn($r)=>$r['stat
     .tbl-nota tbody tr:last-child td { border-bottom: none; }
     .tbl-nota tbody tr:hover td { background: var(--orange-soft); }
 
+    /* Ringkasan */
     .nota-summary { background: #f8f9fa; border-radius: 10px; padding: 1rem 1.2rem; margin-top: 1rem; border: 1px solid var(--border); }
     .row-sum { display: flex; justify-content: space-between; font-size: .85rem; padding: .25rem 0; color: var(--gray); }
     .row-sum.grand { font-weight: 800; font-size: 1rem; color: var(--black); border-top: 2px solid var(--orange); margin-top: .5rem; padding-top: .6rem; }
     .row-sum.grand .val-grand { color: var(--orange); }
 
+    /* Footer modal */
     .modal-nota .modal-footer {
       background: #111;
       border-top: 1px solid #333;
@@ -253,11 +290,14 @@ $total_omzet   = array_sum(array_column(array_filter($transaksi,fn($r)=>$r['stat
       gap: .5rem;
     }
 
+    /* Loading */
     .nota-loading { text-align: center; padding: 3rem 1rem; color: #94a3b8; }
     .nota-loading .fa-spinner { font-size: 2rem; color: var(--orange); }
 
+    /* Alert */
     .alert-custom { border-radius: 12px; font-size: .87rem; font-family: inherit; }
 
+    /* Print */
     @media print {
       body * { visibility: hidden; }
       #areaCetak, #areaCetak * { visibility: visible; }
@@ -275,7 +315,8 @@ $total_omzet   = array_sum(array_column(array_filter($transaksi,fn($r)=>$r['stat
 
       <!-- ALERT -->
       <?php if(isset($_GET['msg'])):
-        $msgs=['tambah'=>['success','fa-check-circle','Transaksi berhasil ditambahkan!'],
+        $msgs=['hapus'=>['danger','fa-trash','Transaksi berhasil dihapus!'],
+               'tambah'=>['success','fa-check-circle','Transaksi berhasil ditambahkan!'],
                'update'=>['warning','fa-edit','Transaksi berhasil diperbarui!']];
         $m=$msgs[$_GET['msg']]??null;
         if($m): ?>
@@ -289,8 +330,11 @@ $total_omzet   = array_sum(array_column(array_filter($transaksi,fn($r)=>$r['stat
       <div class="page-header mb-4">
         <div>
           <h4><i class="fas fa-receipt me-2"></i>Data <span class="accent">Transaksi</span></h4>
-          <small>Riwayat transaksi Tunai &amp; Hutang — Kantin UAM</small>
+          <small>Riwayat semua transaksi penjualan Kantin UAM</small>
         </div>
+        <a href="?page=transaksi_tambah" class="btn-tambah-manual">
+          <i class="fas fa-plus"></i> Tambah Manual
+        </a>
       </div>
 
       <!-- STAT CARDS -->
@@ -373,13 +417,10 @@ $total_omzet   = array_sum(array_column(array_filter($transaksi,fn($r)=>$r['stat
                 <td class="fw-600"><?=htmlspecialchars($t['nama_pembeli'])?></td>
                 <td><?=date('d M Y',strtotime($t['tanggal']))?></td>
                 <td>
-                  <?php
-                    $met    = $t['metode_pembayaran'];
-                    $metKey = strtolower($met);
-                    $mIco   = ['tunai'=>'fa-money-bill-wave','hutang'=>'fa-file-invoice-dollar','transfer'=>'fa-university'];
-                  ?>
-                  <span class="bm bm-<?=$metKey?>">
-                    <i class="fas <?=$mIco[$metKey]??'fa-money-bill'?>"></i><?=ucfirst($met)?>
+                  <?php $met=$t['metode_pembayaran'];
+                  $mIco=['Tunai'=>'fa-money-bill-wave','Hutang'=>'fa-file-invoice-dollar','transfer'=>'fa-university']; ?>
+                  <span class="bm bm-<?=$met?>">
+                    <i class="fas <?=$mIco[$met]??'fa-money-bill'?>"></i><?=ucfirst($met)?>
                   </span>
                 </td>
                 <td class="fw-700" style="color:var(--black);">Rp <?=number_format($t['total_harga'],0,'.',',')?></td>
@@ -392,11 +433,20 @@ $total_omzet   = array_sum(array_column(array_filter($transaksi,fn($r)=>$r['stat
                   </span>
                 </td>
                 <td class="text-center">
-                  <button class="btn-aksi btn btn-outline-secondary" title="Lihat Nota"
-                    style="border-color:#fd7e14;color:#fd7e14;"
-                    onclick="lihatDetail(<?=$t['id_transaksi']?>,'<?=htmlspecialchars($t['no_faktur'])?>') ">
-                    <i class="fas fa-eye"></i>
-                  </button>
+                  <div class="d-flex gap-1 justify-content-center">
+                    <button class="btn-aksi btn btn-outline-secondary" title="Lihat Nota"
+                      style="border-color:#fd7e14;color:#fd7e14;"
+                      onclick="lihatDetail(<?=$t['id_transaksi']?>,'<?=htmlspecialchars($t['no_faktur'])?>') ">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                    <a href="?page=transaksi_edit&id=<?=$t['id_transaksi']?>" class="btn-aksi btn btn-outline-warning" title="Edit">
+                      <i class="fas fa-edit"></i>
+                    </a>
+                    <button class="btn-aksi btn btn-outline-danger" title="Hapus"
+                      onclick="konfirmasiHapus(<?=$t['id_transaksi']?>,'<?=htmlspecialchars($t['no_faktur'])?>') ">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
                 </td>
               </tr>
             <?php endforeach; endif; ?>
@@ -414,11 +464,13 @@ $total_omzet   = array_sum(array_column(array_filter($transaksi,fn($r)=>$r['stat
         <?php endif; ?>
       </div>
 
-    </div>
-  </div>
-</div>
+    </div><!-- /konten-utama -->
+  </div><!-- /area-kanan -->
+</div><!-- /wrapper -->
 
-<!-- MODAL DETAIL NOTA -->
+<!-- ════════════════════════════════════════
+     MODAL DETAIL NOTA (gelap + orange)
+════════════════════════════════════════ -->
 <div class="modal fade modal-nota" id="modalDetailNota" tabindex="-1" data-bs-backdrop="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
@@ -432,14 +484,17 @@ $total_omzet   = array_sum(array_column(array_filter($transaksi,fn($r)=>$r['stat
       </div>
 
       <div class="modal-body p-3">
+        <!-- Loading -->
         <div id="notaLoading" class="nota-loading">
           <i class="fas fa-spinner fa-spin mb-3 d-block"></i>
           <div>Memuat data nota...</div>
         </div>
 
+        <!-- Konten nota -->
         <div id="notaContent" style="display:none;">
           <div class="nota-inner" id="areaCetak">
 
+            <!-- Brand + Info -->
             <div class="d-flex justify-content-between align-items-start">
               <div>
                 <div class="nota-brand">
@@ -462,10 +517,12 @@ $total_omzet   = array_sum(array_column(array_filter($transaksi,fn($r)=>$r['stat
 
             <hr class="nota-divider">
 
+            <!-- Label daftar barang -->
             <div style="font-size:.8rem;font-weight:800;color:var(--gray);margin-bottom:.6rem;text-transform:uppercase;letter-spacing:.04em;">
               <i class="fas fa-shopping-basket me-1" style="color:var(--orange);"></i>Daftar Barang Yang Dibeli
             </div>
 
+            <!-- Tabel barang -->
             <table class="tbl-nota">
               <thead>
                 <tr>
@@ -479,6 +536,7 @@ $total_omzet   = array_sum(array_column(array_filter($transaksi,fn($r)=>$r['stat
               <tbody id="tbodyNota"></tbody>
             </table>
 
+            <!-- Ringkasan -->
             <div class="nota-summary">
               <div class="row-sum">
                 <span>Total Belanja</span>
@@ -494,6 +552,7 @@ $total_omzet   = array_sum(array_column(array_filter($transaksi,fn($r)=>$r['stat
               </div>
             </div>
 
+            <!-- TTD -->
             <div class="row mt-4 text-center" style="font-size:.76rem;color:var(--gray);">
               <div class="col-6">
                 <div style="border-top:1.5px solid #cbd5e1;width:110px;margin:3rem auto .4rem;"></div>
@@ -511,9 +570,9 @@ $total_omzet   = array_sum(array_column(array_filter($transaksi,fn($r)=>$r['stat
               Terima kasih telah berbelanja di <strong>Kantin UAM</strong> 🧡 &nbsp;|&nbsp; Dicetak: <span id="nCetak"></span>
             </div>
 
-          </div>
-        </div>
-      </div>
+          </div><!-- /nota-inner -->
+        </div><!-- /notaContent -->
+      </div><!-- /modal-body -->
 
       <div class="modal-footer">
         <button class="btn btn-secondary btn-sm rounded-pill px-3" data-bs-dismiss="modal">
@@ -523,8 +582,36 @@ $total_omzet   = array_sum(array_column(array_filter($transaksi,fn($r)=>$r['stat
           style="display:none;background:var(--green);color:#fff;border:none;">
           <i class="fas fa-print me-1"></i>Cetak Nota
         </button>
+        <a id="btnEdit" href="#" class="btn btn-sm rounded-pill px-3"
+          style="display:none;background:var(--orange);color:#fff;border:none;">
+          <i class="fas fa-edit me-1"></i>Edit
+        </a>
       </div>
 
+    </div>
+  </div>
+</div>
+
+<!-- MODAL HAPUS -->
+<div class="modal fade" id="modalHapus" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4 shadow">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold">
+          <i class="fas fa-exclamation-triangle text-danger me-2"></i>Konfirmasi Hapus
+        </h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        Yakin hapus transaksi <strong id="spanFaktur"></strong>?<br>
+        <small class="text-muted">Stok barang akan dikembalikan otomatis.</small>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+        <a id="btnHapusConfirm" href="#" class="btn btn-danger rounded-pill px-4">
+          <i class="fas fa-trash me-1"></i>Hapus
+        </a>
+      </div>
     </div>
   </div>
 </div>
@@ -539,14 +626,23 @@ document.getElementById('searchInput').addEventListener('input', function(){
   });
 });
 
+// HAPUS
+function konfirmasiHapus(id, faktur){
+  document.getElementById('spanFaktur').textContent       = faktur;
+  document.getElementById('btnHapusConfirm').href         = `transaksi.php?hapus=${id}`;
+  new bootstrap.Modal(document.getElementById('modalHapus')).show();
+}
+
 // FORMAT RP
 function rp(n){ return 'Rp ' + parseInt(n||0).toLocaleString('id-ID'); }
 
 // LIHAT DETAIL NOTA
 function lihatDetail(id, faktur){
+  // Reset
   document.getElementById('notaLoading').style.display  = 'block';
   document.getElementById('notaContent').style.display  = 'none';
   document.getElementById('btnCetak').style.display     = 'none';
+  document.getElementById('btnEdit').style.display      = 'none';
   document.getElementById('modalFakturTitle').textContent = faktur;
 
   new bootstrap.Modal(document.getElementById('modalDetailNota')).show();
@@ -558,13 +654,15 @@ function lihatDetail(id, faktur){
     const t     = data.transaksi;
     const items = data.detail || [];
 
-    document.getElementById('nFaktur').textContent    = t.no_faktur;
-    document.getElementById('nTanggal').textContent   = t.tanggal_fmt;
-    document.getElementById('nPembeli').textContent   = t.nama_pembeli;
-    document.getElementById('ttdPembeli').textContent = t.nama_pembeli;
-    document.getElementById('nMetode').textContent    = t.metode_pembayaran;
-    document.getElementById('nCetak').textContent     = new Date().toLocaleString('id-ID');
+    // Isi header
+    document.getElementById('nFaktur').textContent   = t.no_faktur;
+    document.getElementById('nTanggal').textContent  = t.tanggal_fmt;
+    document.getElementById('nPembeli').textContent  = t.nama_pembeli;
+    document.getElementById('ttdPembeli').textContent= t.nama_pembeli;
+    document.getElementById('nMetode').textContent   = t.metode_pembayaran;
+    document.getElementById('nCetak').textContent    = new Date().toLocaleString('id-ID');
 
+    // Badge status
     const sMap = {
       lunas:   {cls:'bs-lunas',   icon:'✅', label:'Lunas'},
       pending: {cls:'bs-pending', icon:'⏳', label:'Pending'},
@@ -574,13 +672,16 @@ function lihatDetail(id, faktur){
     document.getElementById('nStatusWrap').innerHTML =
       `<span class="bs ${sm.cls}">${sm.icon} ${sm.label}</span>`;
 
+    // Tabel barang
     const tbody = document.getElementById('tbodyNota');
     tbody.innerHTML = '';
+    let grand = 0;
     if(items.length === 0){
       tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Tidak ada item</td></tr>';
     } else {
       items.forEach((item,idx)=>{
         const sub = parseInt(item.subtotal||0);
+        grand += sub;
         tbody.innerHTML += `
         <tr>
           <td>${idx+1}</td>
@@ -595,9 +696,14 @@ function lihatDetail(id, faktur){
     document.getElementById('nTotal').textContent      = rp(t.total_harga);
     document.getElementById('nGrandTotal').textContent = rp(t.total_harga);
 
+    // Tombol edit
+    document.getElementById('btnEdit').href = `edit_transaksi.php?id=${id}`;
+
+    // Tampilkan
     document.getElementById('notaLoading').style.display = 'none';
     document.getElementById('notaContent').style.display = 'block';
     document.getElementById('btnCetak').style.display    = 'inline-flex';
+    document.getElementById('btnEdit').style.display     = 'inline-flex';
   })
   .catch(()=>{
     document.getElementById('notaLoading').innerHTML =
