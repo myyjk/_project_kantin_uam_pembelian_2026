@@ -7,21 +7,14 @@ if (!isset($_SESSION['isLoggedIn'])) {
     exit();
 }
 
-// =========================================================================
-// PERBAIKAN LOGIKA SESSION & QUERY
-// =========================================================================
-// Ambil ID user yang sedang login dari session
-$user_id    = $_SESSION['currentUser']['id']; 
+// Ambil ID & data user dari session
+$user_id    = $_SESSION['currentUser']['id'];
 $admin_nama = $_SESSION['currentUser']['username'];
 
-// Ambil data user yang valid berdasarkan ID user tersebut
 $q    = mysqli_query($conn, "SELECT * FROM users WHERE id = '$user_id'");
 $user = mysqli_fetch_assoc($q);
 
-// Ambil ID role dari database (1 = Admin, 2 = User, dst.)
-$role_id    = $user['id_role']; 
-
-// Menentukan batas hari berdasarkan id_role (Misal: id_role 1 adalah Admin)
+$role_id    = $user['id_role'];
 $batas_hari = ($role_id == 1) ? 30 : 7;
 $bisa_edit  = true;
 $sisa_hari  = 0;
@@ -38,19 +31,21 @@ $pesan_sukses = "";
 $pesan_error  = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $bisa_edit) {
-    // Variabel $nama sekarang ditujukan untuk kolom 'namalengkap'
-    $nama  = mysqli_real_escape_string($conn, $_POST['nama']);
-    $email = mysqli_real_escape_string($conn, $_POST['email']);
-    $pass  = trim($_POST['password']);
-    $now   = date('Y-m-d H:i:s');
+    // Sesuai kolom DB: namalengkap, email, telepon, password, foto
+    $namalengkap = mysqli_real_escape_string($conn, $_POST['namalengkap']);
+    $email       = mysqli_real_escape_string($conn, $_POST['email']);
+    $telepon     = mysqli_real_escape_string($conn, $_POST['telepon']);
+    $pass        = trim($_POST['password']);
+    $now         = date('Y-m-d H:i:s');
 
+    // Cek email duplikat
     $cek = mysqli_query($conn, "SELECT id FROM users WHERE email='$email' AND id != '$user_id'");
     if (mysqli_num_rows($cek) > 0) {
         $pesan_error = "Email sudah digunakan akun lain!";
     } else {
         $foto = $user['foto'];
         if (isset($_FILES['foto']) && $_FILES['foto']['error'] === 0) {
-            $ext_ok = ['jpg','jpeg','png','webp'];
+            $ext_ok = ['jpg', 'jpeg', 'png', 'webp'];
             $ext    = strtolower(pathinfo($_FILES['foto']['name'], PATHINFO_EXTENSION));
             if (in_array($ext, $ext_ok)) {
                 $nama_foto = "profil_{$user_id}_" . time() . ".$ext";
@@ -64,16 +59,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $bisa_edit) {
         }
 
         if (!$pesan_error) {
-            $pass_sql = $pass !== '' ? ", password='$pass'" : "";
-            
-            // PERBAIKAN: Update diarahkan ke kolom 'namalengkap'
-            $sql = "UPDATE users SET namalengkap='$nama', email='$email', foto='$foto' $pass_sql, updated_at='$now' WHERE id='$user_id'";
-            
+            // Hash password jika diisi
+            $pass_sql = '';
+            if ($pass !== '') {
+                $hashed   = password_hash($pass, PASSWORD_DEFAULT);
+                $pass_sql = ", password='$hashed'";
+            }
+
+            // UPDATE sesuai kolom DB: namalengkap, email, telepon, foto, updated_at
+            $sql = "UPDATE users SET 
+                        namalengkap = '$namalengkap',
+                        email       = '$email',
+                        telepon     = '$telepon',
+                        foto        = '$foto'
+                        $pass_sql,
+                        updated_at  = '$now'
+                    WHERE id = '$user_id'";
+
             if (mysqli_query($conn, $sql)) {
-                $_SESSION['currentUser']['nama'] = $nama;
+                $_SESSION['currentUser']['nama'] = $namalengkap;
                 $pesan_sukses = "Profil berhasil diperbarui!";
-                
-                // Refresh data user setelah update
+
+                // Refresh data user
                 $q    = mysqli_query($conn, "SELECT * FROM users WHERE id = '$user_id'");
                 $user = mysqli_fetch_assoc($q);
                 $bisa_edit = false;
@@ -85,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $bisa_edit) {
     }
 }
 
-// Inisial mengambil dari huruf pertama Nama Lengkap asli
+// Inisial dari namalengkap, fallback ke username
 $inisial = strtoupper(substr($user['namalengkap'] ?? $user['username'], 0, 1));
 ?>
 <!DOCTYPE html>
@@ -134,6 +141,7 @@ $inisial = strtoupper(substr($user['namalengkap'] ?? $user['username'], 0, 1));
         .main-scroll::-webkit-scrollbar { width: 5px; }
         .main-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
 
+        /* ===== HERO ===== */
         .profile-hero {
             background: var(--black);
             border-radius: 16px;
@@ -198,7 +206,7 @@ $inisial = strtoupper(substr($user['namalengkap'] ?? $user['username'], 0, 1));
         .foto-ring:hover .foto-overlay { opacity: 1; }
         .foto-overlay i { color: white; font-size: 1.2rem; }
 
-        .hero-nama { font-size: 1.35rem; font-weight: 800; color: white; line-height: 1.2; }
+        .hero-nama  { font-size: 1.35rem; font-weight: 800; color: white; line-height: 1.2; }
         .hero-email { font-size: 0.8rem; color: rgba(255,255,255,0.55); margin-top: 3px; }
         .badge-role {
             display: inline-flex; align-items: center; gap: 5px;
@@ -229,6 +237,7 @@ $inisial = strtoupper(substr($user['namalengkap'] ?? $user['username'], 0, 1));
         }
         .stat-chip i { font-size: 0.75rem; color: var(--orange); }
 
+        /* ===== FORM CARD ===== */
         .form-card {
             background: var(--white);
             border-radius: 16px;
@@ -265,6 +274,7 @@ $inisial = strtoupper(substr($user['namalengkap'] ?? $user['username'], 0, 1));
 
         .form-card-body { padding: 24px; }
 
+        /* ===== ALERTS ===== */
         .alert-waktu {
             background: var(--orange-soft);
             border: 1.5px solid #fed7aa;
@@ -292,6 +302,7 @@ $inisial = strtoupper(substr($user['namalengkap'] ?? $user['username'], 0, 1));
         .alert-success-custom { background: var(--green-soft); border: 1.5px solid var(--green-mid); color: #14532d; }
         .alert-error-custom   { background: #fef2f2; border: 1.5px solid #fecaca; color: #7f1d1d; }
 
+        /* ===== FIELDS ===== */
         .field-group { margin-bottom: 16px; }
         .field-label {
             font-size: 0.75rem;
@@ -391,7 +402,6 @@ $inisial = strtoupper(substr($user['namalengkap'] ?? $user['username'], 0, 1));
             margin-top: 10px;
         }
         .info-waktu-bawah strong { color: var(--orange); }
-        .field-hint { font-size: 0.72rem; color: #94a3b8; margin-top: 4px; }
     </style>
 </head>
 <body>
@@ -414,34 +424,32 @@ $inisial = strtoupper(substr($user['namalengkap'] ?? $user['username'], 0, 1));
             </div>
             <?php endif; ?>
 
+            <!-- ===== HERO ===== -->
             <div class="profile-hero">
                 <div class="hero-stripe"></div>
                 <div class="hero-accent"></div>
                 <div class="hero-green-bar"></div>
 
                 <div class="hero-content">
-                    <form method="POST" enctype="multipart/form-data" id="formFotoHero" style="display:contents;">
-                        <input type="file" name="foto" id="fotoInputHero" accept="image/*"
-                               style="display:none" <?= !$bisa_edit ? 'disabled' : '' ?>
-                               onchange="previewFoto(this)">
-                        <div class="foto-ring"
-                             onclick="<?= $bisa_edit ? "document.getElementById('fotoInputHero').click()" : '' ?>">
-                            <?php if ($user['foto'] && file_exists("uploads/" . $user['foto'])): ?>
-                                <img src="uploads/<?= $user['foto'] ?>" id="prevFoto" alt="Foto">
-                            <?php else: ?>
-                                <div class="foto-inisial" id="prevFoto"><?= $inisial ?></div>
-                            <?php endif; ?>
-                            <?php if ($bisa_edit): ?>
-                            <div class="foto-overlay"><i class="fas fa-camera"></i></div>
-                            <?php endif; ?>
-                        </div>
-                    </form>
+                    <!-- Foto klik untuk ganti (hanya jika bisa edit) -->
+                    <div class="foto-ring"
+                         onclick="<?= $bisa_edit ? "document.getElementById('fotoInputHero').click()" : '' ?>">
+                        <?php if ($user['foto'] && file_exists("uploads/" . $user['foto'])): ?>
+                            <img src="uploads/<?= htmlspecialchars($user['foto']) ?>" id="prevFoto" alt="Foto">
+                        <?php else: ?>
+                            <div class="foto-inisial" id="prevFoto"><?= $inisial ?></div>
+                        <?php endif; ?>
+                        <?php if ($bisa_edit): ?>
+                        <div class="foto-overlay"><i class="fas fa-camera"></i></div>
+                        <?php endif; ?>
+                    </div>
 
                     <div>
                         <div class="hero-nama"><?= htmlspecialchars($user['namalengkap'] ?? $user['username']) ?></div>
                         <div class="hero-email"><?= htmlspecialchars($user['email']) ?></div>
                         <div class="badge-role">
-                            <i class="fas fa-shield-halved"></i> ID Role: <?= $user['id_role'] ?>
+                            <i class="fas fa-shield-halved"></i>
+                            <?= ($role_id == 1) ? 'Admin' : 'User' ?> (Role <?= htmlspecialchars($role_id) ?>)
                         </div>
                     </div>
 
@@ -464,6 +472,7 @@ $inisial = strtoupper(substr($user['namalengkap'] ?? $user['username'], 0, 1));
                 </div>
             </div>
 
+            <!-- ===== FORM CARD ===== -->
             <div class="form-card">
                 <div class="form-card-header">
                     <h6><i class="fas fa-user-pen"></i> Edit Informasi Profil</h6>
@@ -487,8 +496,13 @@ $inisial = strtoupper(substr($user['namalengkap'] ?? $user['username'], 0, 1));
                     <?php endif; ?>
 
                     <form method="POST" enctype="multipart/form-data">
+                        <!-- Input file foto tersembunyi (dipanggil dari hero) -->
+                        <input type="file" name="foto" id="fotoInputHero" accept="image/*"
+                               style="display:none" <?= !$bisa_edit ? 'disabled' : '' ?>
+                               onchange="previewFoto(this)">
 
                         <?php if ($bisa_edit): ?>
+                        <!-- Upload Foto di dalam form -->
                         <div class="field-group">
                             <div class="field-label"><i class="fas fa-camera"></i> Foto Profil</div>
                             <div class="file-input-wrap">
@@ -500,17 +514,22 @@ $inisial = strtoupper(substr($user['namalengkap'] ?? $user['username'], 0, 1));
                         </div>
                         <hr class="divider">
                         <?php endif; ?>
-                        
+
+                        <!-- Username (readonly, tidak bisa diubah) -->
                         <div class="field-group">
                             <div class="field-label"><i class="fas fa-user-tag"></i> Username Login</div>
-                            <input type="text" name="nama"   class="field-input"
-                                   value="<?= htmlspecialchars($user['username']) ?>" >
-                                   <?= $bisa_edit ? 'disabled' : 'required' ?>
+                            <input type="text" class="field-input readonly-field"
+                                   value="<?= htmlspecialchars($user['username']) ?>" disabled>
+                            <div style="font-size:0.72rem;color:#94a3b8;margin-top:4px;">
+                                Username tidak dapat diubah.
+                            </div>
                         </div>
+
+                        <!-- Nama Lengkap & Email -->
                         <div class="field-row">
                             <div class="field-group">
                                 <div class="field-label"><i class="fas fa-user"></i> Nama Lengkap</div>
-                                <input type="text" name="nama" class="field-input"
+                                <input type="text" name="namalengkap" class="field-input"
                                        value="<?= htmlspecialchars($user['namalengkap'] ?? '') ?>"
                                        <?= !$bisa_edit ? 'disabled' : 'required' ?>>
                             </div>
@@ -522,17 +541,25 @@ $inisial = strtoupper(substr($user['namalengkap'] ?? $user['username'], 0, 1));
                             </div>
                         </div>
 
-                        
+                        <!-- Telepon & ID Role -->
                         <div class="field-row">
+                            <div class="field-group">
+                                <div class="field-label"><i class="fas fa-phone"></i> Telepon</div>
+                                <input type="text" name="telepon" class="field-input"
+                                       value="<?= htmlspecialchars($user['telepon'] ?? '') ?>"
+                                       placeholder="08xxxxxxxxxx"
+                                       <?= !$bisa_edit ? 'disabled' : '' ?>>
+                            </div>
                             <div class="field-group">
                                 <div class="field-label"><i class="fas fa-id-badge"></i> ID Role</div>
                                 <input type="text" class="field-input readonly-field"
-                                value="<?= htmlspecialchars($user['id_role']) ?>" disabled>
+                                       value="<?= ($role_id == 1) ? 'Admin (1)' : 'User (' . htmlspecialchars($role_id) . ')' ?>"
+                                       disabled>
                             </div>
                         </div>
-                        
+
+                        <!-- Password Baru -->
                         <div class="field-group">
-                                
                             <div class="field-label">
                                 <i class="fas fa-lock"></i> Password Baru
                                 <span style="font-weight:500;text-transform:none;letter-spacing:0;color:#94a3b8;font-size:0.72rem;">
@@ -543,11 +570,14 @@ $inisial = strtoupper(substr($user['namalengkap'] ?? $user['username'], 0, 1));
                                 <input type="password" name="password" id="passInput"
                                        class="field-input" placeholder="••••••••"
                                        <?= !$bisa_edit ? 'disabled' : '' ?>>
+                                <?php if ($bisa_edit): ?>
                                 <button type="button" class="pass-toggle" onclick="togglePass()">
                                     <i class="fas fa-eye" id="eyeIcon"></i>
                                 </button>
+                                <?php endif; ?>
                             </div>
                         </div>
+
                         <button type="submit" class="btn-simpan" <?= !$bisa_edit ? 'disabled' : '' ?>>
                             <?php if ($bisa_edit): ?>
                                 <i class="fas fa-floppy-disk"></i> Simpan Perubahan
@@ -584,7 +614,7 @@ function previewFoto(input) {
         } else {
             const img = document.createElement('img');
             img.src = e.target.result;
-            img.id = 'prevFoto';
+            img.id  = 'prevFoto';
             el.replaceWith(img);
         }
     };
