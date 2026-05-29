@@ -10,9 +10,9 @@ $admin_nama    = $_SESSION['currentUser']['username'];
 $id_user_login = $_SESSION['currentUser']['id'];
 $id_beli_filter = isset($_GET['id_beli']) ? (int)$_GET['id_beli'] : 0;
 
-// Query histori pembayaran
 $where_faktur = $id_beli_filter > 0 ? "AND p.id_beli = '$id_beli_filter'" : "";
 
+// ✅ PERBAIKAN: Hapus filter "AND p.id_admin = '$id_user_login'"
 $query = "SELECT 
             ph.id_pembayaran,
             ph.id_beli,
@@ -24,7 +24,7 @@ $query = "SELECT
           FROM pembayaran_hutang ph
           JOIN pembelian p ON ph.id_beli = p.id_beli
           LEFT JOIN vendor v ON p.id_vendor = v.id_vendor
-          WHERE p.id_admin = '$id_user_login' $where_faktur
+          WHERE 1=1 $where_faktur
           ORDER BY ph.tanggal DESC";
 
 $result   = mysqli_query($conn, $query);
@@ -34,13 +34,14 @@ $all_rows = mysqli_fetch_all($result, MYSQLI_ASSOC);
 $total_dibayar = array_sum(array_column($all_rows, 'nominal'));
 
 // Info faktur jika filter spesifik
+// ✅ PERBAIKAN: Hapus filter "AND p.id_admin = '$id_user_login'"
 $info_faktur = null;
 if ($id_beli_filter > 0) {
     $qf = mysqli_query($conn, "SELECT p.no_faktur, 
                 IFNULL(SUM(db.jumlah * db.harga), 0) AS total_belanja
               FROM pembelian p
               LEFT JOIN detail_beli db ON p.id_beli = db.id_beli
-              WHERE p.id_beli = '$id_beli_filter' AND p.id_admin = '$id_user_login'
+              WHERE p.id_beli = '$id_beli_filter'
               GROUP BY p.id_beli");
     $info_faktur = mysqli_fetch_assoc($qf);
 }
@@ -76,7 +77,6 @@ if ($id_beli_filter > 0) {
         .foto-thumb { width:50px; height:50px; object-fit:cover; border-radius:8px; cursor:pointer; border:2px solid #eee; transition:0.2s; }
         .foto-thumb:hover { border-color:var(--orange); transform:scale(1.05); }
 
-        /* Lightbox */
         .lightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9999; align-items:center; justify-content:center; }
         .lightbox.active { display:flex; }
         .lightbox img { max-width:90vw; max-height:90vh; border-radius:12px; box-shadow:0 0 40px rgba(0,0,0,0.5); }
@@ -174,7 +174,7 @@ if ($id_beli_filter > 0) {
                                 </td>
                                 <td><span class="fw-bold text-success">Rp <?= number_format($row['nominal'], 0, ',', '.') ?></span></td>
                                 <td class="text-center">
-                                    <?php if ($row['foto_faktur'] && file_exists("upload/" . $row['foto_faktur'])): ?>
+                                    <?php if ($row['foto_faktur'] && file_exists(__DIR__ . "/upload/" . $row['foto_faktur'])): ?>
                                         <img src="upload/<?= htmlspecialchars($row['foto_faktur']) ?>"
                                              class="foto-thumb"
                                              onclick="bukaLightbox(this.src)"
